@@ -17,6 +17,8 @@ import argparse
 import pickle
 import math
 
+from tqdm import tqdm
+
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -24,7 +26,7 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Training With Pytorch')
-train_set = parser.add_mutually_exclusive_group()
+# train_set = parser.add_mutually_exclusive_group()
 parser.add_argument('--input',default=300, type=int, choices=[300, 512], help='ssd input size, currently support ssd300 and ssd512')
 parser.add_argument('--dataset', default='VOC', choices=['VOC', 'COCO'],
                     type=str, help='VOC or COCO')
@@ -59,15 +61,9 @@ parser.add_argument('--save_folder', default='weights/',
 args = parser.parse_args()
 
 
-if torch.cuda.is_available():
-    if args.cuda:
-        torch.set_default_tensor_type('torch.cuda.FloatTensor')
-    if not args.cuda:
-        print("WARNING: It looks like you have a CUDA device, but aren't " +
-              "using CUDA.\nRun with --cuda for optimal training speed.")
-        torch.set_default_tensor_type('torch.FloatTensor')
-else:
-    torch.set_default_tensor_type('torch.FloatTensor')
+# con questo:
+if torch.cuda.is_available() and args.cuda:
+    torch.set_default_dtype(torch.float32)
 
 if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
@@ -86,8 +82,8 @@ def train():
                                 transform=SSDAugmentation(cfg['min_dim'],
                                                           MEANS))
     elif args.dataset == 'VOC':
-        if args.dataset_root == VOC_ROOT:
-            parser.error('Must specify dataset if specifying dataset_root')
+        # if args.dataset_root == VOC_ROOT:
+        #     parser.error('Must specify dataset if specifying dataset_root')
         cfg = voc
         dataset = VOCDetection(root=args.dataset_root,
                                transform=SSDAugmentation(args.input,
@@ -103,7 +99,7 @@ def train():
     net = ssd_net
 
     if args.cuda:
-        net = torch.nn.DataParallel(ssd_net)
+        net = ssd_net # torch.nn.DataParallel(ssd_net, device_ids=[0,1])
         cudnn.benchmark = True
 
     if args.resume:
@@ -112,7 +108,7 @@ def train():
     else:
         if args.basenet == 'vgg16_reducedfc.pth':
             vgg_weights = torch.load(args.save_folder + args.basenet)
-            print('Loading base network weights from %s\n'%(args.save_folder + args.basenet))
+            print("Loading base network weights from %s\n"%(args.save_folder + args.basenet))
             ssd_net.base.load_state_dict(vgg_weights)
         elif args.basenet == 'efficientnet_b4_truncated.pth':
             efficientnet_weights = torch.load(args.save_folder + args.basenet)
@@ -160,7 +156,7 @@ def train():
     data_loader = data.DataLoader(dataset, args.batch_size,
                                   num_workers=args.num_workers,
                                   shuffle=True, collate_fn=detection_collate,
-                                  pin_memory=True)
+                                  pin_memory=True, generator=torch.Generator(device='cpu'))
     # create batch iterator
     # batch_iterator = iter(data_loader)
     for epoch in range(args.start_epoch, args.num_epoch):
@@ -201,34 +197,36 @@ def train():
             loc_loss += loss_l.item()
             conf_loss += loss_c.item()
 
-            if iteration % 10 == 0:
-                print('Epoch '+repr(epoch)+'|| iter ' + repr(iteration % epoch_size)+'/'+repr(epoch_size) +'|| Total iter '+repr(iteration)+ ' || Total Loss: %.4f || Loc Loss: %.4f || Cls Loss: %.4f || LR: %f || timer: %.4f sec.\n' % (loss.item(),loss_l.item(),loss_c.item(),cur_lr,(t1 - t0)), end=' ')
-                loss_cls.append(loss_c.item())
-                loss_loc.append(loss_l.item())
-                loss_total.append(loss.item())
-                loss_dic = {'loss':loss_total, 'loss_cls':loss_cls, 'loss_loc':loss_loc}
+            # if iteration % 200 == 0:
+                
 
             if args.visdom:
                 update_vis_plot(iteration, loss_l.item(), loss_c.item(),
                                 iter_plot, epoch_plot, 'append')
 
-            if iteration != 0 and iteration % 5000 == 0:
+            if iteration != 0 and iteration % 10 == 0:
                 print('Saving state, iter:', iteration)
                 torch.save(ssd_net.state_dict(), 'weights/ssd{}_VOC_'.format(args.input) +
                            repr(iteration) + '.pth')
                 with open('loss.pkl', 'wb') as f:
                     pickle.dump(loss_dic, f, pickle.HIGHEST_PROTOCOL)
+                
             iteration += 1
+        print('Epoch '+repr(epoch)+'|| Total iter '+repr(iteration)+ ' || Total Loss: %.4f || Loc Loss: %.4f || Cls Loss: %.4f || LR: %f || timer: %.4f sec.\n' % (loss.item(),loss_l.item(),loss_c.item(),cur_lr,(t1 - t0)), end=' ')
+        loss_cls.append(loss_c.item())
+        loss_loc.append(loss_l.item())
+        loss_total.append(loss.item())
+        loss_dic = {'loss':loss_total, 'loss_cls':loss_cls, 'loss_loc':loss_loc}
+        print('Saving state, iter:', iteration)
+        torch.save(ssd_net.state_dict(), 'weights/ssd{}_VOC_'.format(args.input) +
+                   repr(iteration) + '.pth')
+        with open('loss.pkl', 'wb') as f:
+            pickle.dump(loss_dic, f, pickle.HIGHEST_PROTOCOL)
     torch.save(ssd_net.state_dict(),
                args.save_folder + '' + args.dataset + '.pth')
 
 
 def adjust_learning_rate(optimizer, gamma, step):
-    """Sets the learning rate to the initial LR decayed by 10 at every
-        specified step
-    # Adapted from PyTorch Imagenet example:
-    # https://github.com/pytorch/examples/blob/master/imagenet/main.py
-    """
     lr = args.lr * (gamma ** (step))
     print('Now we change lr ...')
     for param_group in optimizer.param_groups:
