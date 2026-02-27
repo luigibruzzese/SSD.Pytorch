@@ -370,7 +370,7 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
 
     # Usa DataLoader con batch size > 1
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=16, num_workers=4,
+        dataset, batch_size=32, num_workers=4,
         shuffle=False, collate_fn=detection_collate,
         pin_memory=True, generator=torch.Generator(device='cpu')
     )
@@ -431,6 +431,7 @@ if __name__ == '__main__':
                            BaseTransform(args.input, dataset_mean),
                            VOCAnnotationTransform())
     if args.cuda:
+        net = torch.nn.DataParallel(net, device_ids=[0,1])
         net = net.cuda()
         cudnn.benchmark = True
     # evaluation
