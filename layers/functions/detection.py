@@ -31,6 +31,7 @@ class Detect(Function):
 
     @staticmethod
     def forward(ctx, loc_data, conf_data, prior_data):
+        prior_data = prior_data.cuda()
         num = loc_data.size(0)  # batch size
         num_priors = prior_data.size(0)
         output = torch.zeros(num, Detect.num_classes, Detect.top_k, 5)
