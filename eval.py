@@ -370,7 +370,7 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
 
     # Usa DataLoader con batch size > 1
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=32, num_workers=8,
+        dataset, batch_size=64, num_workers=4,
         shuffle=False, collate_fn=detection_collate,
         pin_memory=True, generator=torch.Generator(device='cpu')
     )
