@@ -3,9 +3,9 @@
     @rbgirshick py-faster-rcnn https://github.com/rbgirshick/py-faster-rcnn
     Licensed under The MIT License [see LICENSE for details]
 """
-from data import detection_collate
 
 from __future__ import print_function
+from data import detection_collate
 import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
