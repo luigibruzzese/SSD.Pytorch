@@ -60,8 +60,8 @@ args = parser.parse_args()
 if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
 
-if torch.cuda.is_available():
-    torch.set_default_dtype(torch.float32)
+# if torch.cuda.is_available():
+#     torch.set_default_dtype(torch.float32)
 
 annopath = os.path.join(args.voc_root, 'VOC2007', 'Annotations', '%s.xml')
 imgpath = os.path.join(args.voc_root, 'VOC2007', 'JPEGImages', '%s.jpg')
