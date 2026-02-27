@@ -436,5 +436,5 @@ if __name__ == '__main__':
         cudnn.benchmark = True
     # evaluation
     test_net(args.save_folder, net, args.cuda, dataset,
-             BaseTransform(net.size, dataset_mean), args.top_k, args.input,
+             BaseTransform(net.module.size, dataset_mean), args.top_k, args.input,
              thresh=args.confidence_threshold)
