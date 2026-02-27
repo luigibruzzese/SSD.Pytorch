@@ -13,6 +13,8 @@ from data import VOC_ROOT, VOCAnnotationTransform, VOCDetection, BaseTransform
 from data import VOC_CLASSES as labelmap
 import torch.utils.data as data
 
+from tqdm import tqdm
+
 from ssd import build_ssd
 
 import sys
@@ -376,7 +378,7 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
     output_dir = get_output_dir('ssd300_120000', set_type)
     det_file = os.path.join(output_dir, 'detections.pkl')
 
-    for i in range(num_images):
+    for i in tqdm(range(num_images)):
         im, gt, h, w = dataset.pull_item(i)
 
         x = Variable(im.unsqueeze(0))
@@ -404,8 +406,8 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
                                                                  copy=False)
             all_boxes[j][i] = cls_dets
 
-        print('im_detect: {:d}/{:d} {:.3f}s'.format(i + 1,
-                                                    num_images, detect_time))
+        # print('im_detect: {:d}/{:d} {:.3f}s'.format(i + 1,
+        #                                             num_images, detect_time))
 
     with open(det_file, 'wb') as f:
         pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)

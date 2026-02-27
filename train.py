@@ -203,14 +203,7 @@ def train():
             if args.visdom:
                 update_vis_plot(iteration, loss_l.item(), loss_c.item(),
                                 iter_plot, epoch_plot, 'append')
-
-            if iteration != 0 and iteration % 10 == 0:
-                print('Saving state, iter:', iteration)
-                torch.save(ssd_net.state_dict(), 'weights/ssd{}_VOC_'.format(args.input) +
-                           repr(iteration) + '.pth')
-                with open('loss.pkl', 'wb') as f:
-                    pickle.dump(loss_dic, f, pickle.HIGHEST_PROTOCOL)
-                
+              
             iteration += 1
         print('Epoch '+repr(epoch)+'|| Total iter '+repr(iteration)+ ' || Total Loss: %.4f || Loc Loss: %.4f || Cls Loss: %.4f || LR: %f || timer: %.4f sec.\n' % (loss.item(),loss_l.item(),loss_c.item(),cur_lr,(t1 - t0)), end=' ')
         loss_cls.append(loss_c.item())
@@ -222,6 +215,9 @@ def train():
                    repr(iteration) + '.pth')
         with open('loss.pkl', 'wb') as f:
             pickle.dump(loss_dic, f, pickle.HIGHEST_PROTOCOL)
+
+        # TODO: validation if 
+        
     torch.save(ssd_net.state_dict(),
                args.save_folder + '' + args.dataset + '.pth')
 
