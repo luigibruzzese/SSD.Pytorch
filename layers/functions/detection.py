@@ -2,6 +2,7 @@ import torch
 from torch.autograd import Function
 from ..box_utils import decode, nms
 from data import voc as cfg
+from torchvision.ops import nms as tv_nms
 
 
 class Detect(Function):
@@ -50,7 +51,11 @@ class Detect(Function):
                     continue
                 l_mask = c_mask.unsqueeze(1).expand_as(decoded_boxes)
                 boxes = decoded_boxes[l_mask].view(-1, 4)
-                ids, count = nms(boxes, scores, Detect.nms_thresh, Detect.top_k)
+                # ids, count = nms(boxes, scores, Detect.nms_thresh, Detect.top_k)
+                keep = tv_nms(boxes.cuda(), scores.cuda(), Detect.nms_thresh)
+                keep = keep[:Detect.top_k]
+                count = len(keep)
+                ids = keep
                 output[i, cl, :count] = \
                     torch.cat((scores[ids[:count]].unsqueeze(1),
                                boxes[ids[:count]]), 1)
