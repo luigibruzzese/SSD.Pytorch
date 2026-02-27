@@ -3,6 +3,7 @@
     @rbgirshick py-faster-rcnn https://github.com/rbgirshick/py-faster-rcnn
     Licensed under The MIT License [see LICENSE for details]
 """
+from data import detection_collate
 
 from __future__ import print_function
 import torch
@@ -367,47 +368,51 @@ cachedir: Directory for caching the annotations
 def test_net(save_folder, net, cuda, dataset, transform, top_k,
              im_size=300, thresh=0.05):
     num_images = len(dataset)
-    # all detections are collected into:
-    #    all_boxes[cls][image] = N x 5 array of detections in
-    #    (x1, y1, x2, y2, score)
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(len(labelmap)+1)]
 
-    # timers
     _t = {'im_detect': Timer(), 'misc': Timer()}
     output_dir = get_output_dir('ssd300_120000', set_type)
     det_file = os.path.join(output_dir, 'detections.pkl')
 
-    for i in tqdm(range(num_images)):
-        im, gt, h, w = dataset.pull_item(i)
+    # Usa DataLoader con batch size > 1
+    data_loader = torch.utils.data.DataLoader(
+        dataset, batch_size=16, num_workers=4,
+        shuffle=False, collate_fn=detection_collate,
+        pin_memory=True, generator=torch.Generator(device='cpu')
+    )
 
-        x = Variable(im.unsqueeze(0))
-        if args.cuda:
-            x = x.cuda()
+    img_idx = 0
+    for batch_idx, (images, targets) in enumerate(tqdm(data_loader)):
+        if cuda:
+            images = images.cuda()
+
         _t['im_detect'].tic()
-        detections = net(x).data
+        with torch.no_grad():
+            detections = net(images).data
         detect_time = _t['im_detect'].toc(average=False)
 
-        # skip j = 0, because it's the background class
-        for j in range(1, detections.size(1)):
-            dets = detections[0, j, :]
-            mask = dets[:, 0].gt(0.).expand(5, dets.size(0)).t()
-            dets = torch.masked_select(dets, mask).view(-1, 5)
-            if dets.size(0) == 0:
-                continue
-            boxes = dets[:, 1:]
-            boxes[:, 0] *= w
-            boxes[:, 2] *= w
-            boxes[:, 1] *= h
-            boxes[:, 3] *= h
-            scores = dets[:, 0].cpu().numpy()
-            cls_dets = np.hstack((boxes.cpu().numpy(),
-                                  scores[:, np.newaxis])).astype(np.float32,
-                                                                 copy=False)
-            all_boxes[j][i] = cls_dets
-
-        # print('im_detect: {:d}/{:d} {:.3f}s'.format(i + 1,
-        #                                             num_images, detect_time))
+        for b in range(images.size(0)):
+            i = img_idx + b
+            if i >= num_images:
+                break
+            _, _, h, w = images.size()
+            for j in range(1, detections.size(1)):
+                dets = detections[b, j, :]
+                mask = dets[:, 0].gt(0.).expand(5, dets.size(0)).t()
+                dets = torch.masked_select(dets, mask).view(-1, 5)
+                if dets.size(0) == 0:
+                    continue
+                boxes = dets[:, 1:]
+                boxes[:, 0] *= w
+                boxes[:, 2] *= w
+                boxes[:, 1] *= h
+                boxes[:, 3] *= h
+                scores = dets[:, 0].cpu().numpy()
+                cls_dets = np.hstack((boxes.cpu().numpy(),
+                                      scores[:, np.newaxis])).astype(np.float32, copy=False)
+                all_boxes[j][i] = cls_dets
+        img_idx += images.size(0)
 
     with open(det_file, 'wb') as f:
         pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
