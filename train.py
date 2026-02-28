@@ -87,7 +87,7 @@ def train():
         # if args.dataset_root == VOC_ROOT:
         #     parser.error('Must specify dataset if specifying dataset_root')
         cfg = voc
-        train_dataset = VOCDetection(root=args.dataset_root, image_sets=[('2007', 'train'), ('2012', 'train')],
+        train_dataset = VOCDetection(root=args.dataset_root, image_sets=[('2007', 'train')],
                                transform=SSDAugmentation(args.input,
                                                          MEANS))
 
