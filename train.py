@@ -87,7 +87,7 @@ def train():
         # if args.dataset_root == VOC_ROOT:
         #     parser.error('Must specify dataset if specifying dataset_root')
         cfg = voc
-        dataset = VOCDetection(root=args.dataset_root,
+        train_dataset = VOCDetection(root=args.dataset_root, image_sets=[('2007', 'train'), ('2012', 'train')],
                                transform=SSDAugmentation(args.input,
                                                          MEANS))
 
@@ -157,7 +157,7 @@ def train():
         iter_plot = create_vis_plot('Iteration', 'Loss', vis_title, vis_legend)
         epoch_plot = create_vis_plot('Epoch', 'Loss', vis_title, vis_legend)
 
-    data_loader = data.DataLoader(dataset, args.batch_size,
+    train_data_loader = data.DataLoader(train_dataset, args.batch_size,
                                   num_workers=args.num_workers,
                                   shuffle=True, collate_fn=detection_collate,
                                   pin_memory=True, generator=torch.Generator(device='cpu'))
@@ -177,7 +177,7 @@ def train():
             adjust_learning_rate(optimizer, args.gamma, step_index)
         if epoch <= 5:
             warmup_learning_rate(optimizer,epoch)
-        for images, targets in data_loader: # load train data
+        for images, targets in train_data_loader: # load train data
             # if iteration % 100 == 0:
             for param in optimizer.param_groups:
                 if 'lr' in param.keys():
