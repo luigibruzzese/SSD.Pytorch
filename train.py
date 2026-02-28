@@ -177,7 +177,7 @@ def train():
             adjust_learning_rate(optimizer, args.gamma, step_index)
         if epoch <= 5:
             warmup_learning_rate(optimizer,epoch)
-        for images, targets in train_data_loader: # load train data
+        for images, targets in tqdm(train_data_loader, desc=f"Training epoch {epoch}"): # load train data
             # if iteration % 100 == 0:
             for param in optimizer.param_groups:
                 if 'lr' in param.keys():
