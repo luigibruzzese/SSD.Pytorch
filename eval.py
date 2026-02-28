@@ -384,7 +384,7 @@ def evaluate_detections(box_list, output_dir, dataset):
     # write_voc_results_file(box_list, dataset)
     do_python_eval(output_dir)
 
-def eval(model_path, voc_root, input_size, save_folder, top_k, cuda, s_type):
+def eval(model_path, voc_root, input_size, save_folder, top_k, cuda, s_type, confidence_threshold):
     global annopath, imgpath, imgsetpath, devkit_path, set_type
 
     annopath = os.path.join(voc_root, 'VOC2007', 'Annotations', '%s.xml')
@@ -411,7 +411,7 @@ def eval(model_path, voc_root, input_size, save_folder, top_k, cuda, s_type):
     # evaluation
     test_net(save_folder, net, cuda, dataset,
              BaseTransform(net.size, dataset_mean), top_k, input_size,
-             thresh=args.confidence_threshold)
+             thresh=confidence_threshold)
 
 
 if __name__ == '__main__':
@@ -442,4 +442,4 @@ if __name__ == '__main__':
     # if torch.cuda.is_available():
     #     torch.set_default_dtype(torch.float32)
 
-    eval(args.trained_model, args.voc_root, args.input, args.save_folder, args.top_k, args.cuda, args.set_type)
+    eval(args.trained_model, args.voc_root, args.input, args.save_folder, args.top_k, args.cuda, args.set_type, args.confidence_threshold)

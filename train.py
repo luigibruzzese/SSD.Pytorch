@@ -221,7 +221,7 @@ def train():
             with open('loss.pkl', 'wb') as f:
                 pickle.dump(loss_dic, f, pickle.HIGHEST_PROTOCOL)
 
-        mAP = eval('weights/last.pth', args.dataset_root, args.input, 'eval/', 200, args.cuda, 'val')
+        mAP = eval('weights/last.pth', args.dataset_root, args.input, 'eval/', 200, args.cuda, 'val', 0.01)
         print(f"Validation mAP: {mAP}")
         if mAP > bestmAP:
             bestmAP = mAP
