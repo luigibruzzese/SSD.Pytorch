@@ -36,41 +36,7 @@ def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
 
-parser = argparse.ArgumentParser(
-    description='Single Shot MultiBox Detector Evaluation')
-parser.add_argument('--trained_model',
-                    default='/home/hwits/Documents/SSD.Pytorch/weights/ssd300_VOC_146000.pth', type=str,
-                    help='Trained state_dict file path to open')
-parser.add_argument('--input',default=512, type=int, choices=[300, 512], help='ssd input size, currently support ssd300 and ssd512')
-parser.add_argument('--save_folder', default='eval/', type=str,
-                    help='File path to save results')
-parser.add_argument('--confidence_threshold', default=0.01, type=float,
-                    help='Detection confidence threshold')
-parser.add_argument('--top_k', default=5, type=int,
-                    help='Further restrict the number of predictions to parse')
-parser.add_argument('--cuda', default=True, type=str2bool,
-                    help='Use cuda to train model')
-parser.add_argument('--voc_root', default='./data/VOCdevkit',
-                    help='Location of VOC root directory')
-parser.add_argument('--cleanup', default=True, type=str2bool,
-                    help='Cleanup and remove results files following eval')
 
-args = parser.parse_args()
-
-if not os.path.exists(args.save_folder):
-    os.mkdir(args.save_folder)
-
-# if torch.cuda.is_available():
-#     torch.set_default_dtype(torch.float32)
-
-annopath = os.path.join(args.voc_root, 'VOC2007', 'Annotations', '%s.xml')
-imgpath = os.path.join(args.voc_root, 'VOC2007', 'JPEGImages', '%s.jpg')
-imgsetpath = os.path.join(args.voc_root, 'VOC2007', 'ImageSets',
-                          'Main', '{:s}.txt')
-YEAR = '2007'
-devkit_path = args.voc_root + 'VOC' + YEAR
-dataset_mean = (104, 117, 123)
-set_type = 'test'
 
 
 class Timer(object):
@@ -415,25 +381,65 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
 
 
 def evaluate_detections(box_list, output_dir, dataset):
-    write_voc_results_file(box_list, dataset)
+    # write_voc_results_file(box_list, dataset)
     do_python_eval(output_dir)
 
+def eval(model_path, voc_root, input_size, save_folder, top_k, cuda, s_type):
+    global annopath, imgpath, imgsetpath, devkit_path, set_type
 
-if __name__ == '__main__':
+    annopath = os.path.join(voc_root, 'VOC2007', 'Annotations', '%s.xml')
+    imgpath = os.path.join(voc_root, 'VOC2007', 'JPEGImages', '%s.jpg')
+    imgsetpath = os.path.join(voc_root, 'VOC2007', 'ImageSets',
+                            'Main', '{:s}.txt')
+    YEAR = '2007'
+    devkit_path = voc_root + 'VOC' + YEAR
+    dataset_mean = (104, 117, 123)
     # load net
+    set_type = s_type
     num_classes = len(labelmap) + 1                      # +1 for background
-    net = build_ssd('test', args.input, num_classes)            # initialize SSD
-    net.load_state_dict(torch.load(args.trained_model))
+    net = build_ssd('test', input_size, num_classes)            # initialize SSD
+    net.load_state_dict(torch.load(model_path))
     net.eval()
     print('Finished loading model!')
     # load data
-    dataset = VOCDetection(args.voc_root, [('2007', set_type)],
-                           BaseTransform(args.input, dataset_mean),
+    dataset = VOCDetection(voc_root, [('2007', set_type)],
+                           BaseTransform(input_size, dataset_mean),
                            VOCAnnotationTransform())
-    if args.cuda:
+    if cuda:
         net = net.cuda()
         cudnn.benchmark = True
     # evaluation
-    test_net(args.save_folder, net, args.cuda, dataset,
-             BaseTransform(net.size, dataset_mean), args.top_k, args.input,
+    test_net(save_folder, net, cuda, dataset,
+             BaseTransform(net.size, dataset_mean), top_k, input_size,
              thresh=args.confidence_threshold)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Single Shot MultiBox Detector Evaluation')
+    parser.add_argument('--trained_model',
+                        default='/home/hwits/Documents/SSD.Pytorch/weights/ssd300_VOC_146000.pth', type=str,
+                        help='Trained state_dict file path to open')
+    parser.add_argument('--input',default=512, type=int, choices=[300, 512], help='ssd input size, currently support ssd300 and ssd512')
+    parser.add_argument('--save_folder', default='eval/', type=str,
+                        help='File path to save results')
+    parser.add_argument('--confidence_threshold', default=0.01, type=float,
+                        help='Detection confidence threshold')
+    parser.add_argument('--top_k', default=5, type=int,
+                        help='Further restrict the number of predictions to parse')
+    parser.add_argument('--cuda', default=True, type=str2bool,
+                        help='Use cuda to train model')
+    parser.add_argument('--voc_root', default='./data/VOCdevkit',
+                        help='Location of VOC root directory')
+    parser.add_argument('--cleanup', default=True, type=str2bool,
+                        help='Cleanup and remove results files following eval')
+
+    args = parser.parse_args()
+
+    if not os.path.exists(args.save_folder):
+        os.mkdir(args.save_folder)
+
+    # if torch.cuda.is_available():
+    #     torch.set_default_dtype(torch.float32)
+
+    eval(args.trained_model, args.voc_root, args.input, args.save_folder, args.top_k, args.cuda, args.set_type)

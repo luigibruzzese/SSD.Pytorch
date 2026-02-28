@@ -17,6 +17,8 @@ import argparse
 import pickle
 import math
 
+from eval import eval
+
 from tqdm import tqdm
 
 
@@ -141,6 +143,8 @@ def train():
     loss_cls = []
     print('Loading the dataset...')
 
+    bestmAP = 0
+
     epoch_size = math.ceil(len(dataset) / args.batch_size)
     print('iteration per epoch:',epoch_size)
     print('Training SSD on:', dataset.name)
@@ -211,15 +215,20 @@ def train():
         loss_total.append(loss.item())
         loss_dic = {'loss':loss_total, 'loss_cls':loss_cls, 'loss_loc':loss_loc}
         print('Saving state, iter:', iteration)
-        torch.save(ssd_net.state_dict(), 'weights/ssd{}_VOC_'.format(args.input) +
-                   repr(iteration) + '.pth')
+        torch.save(ssd_net.state_dict(), 'weights/last.pth')
         with open('loss.pkl', 'wb') as f:
             pickle.dump(loss_dic, f, pickle.HIGHEST_PROTOCOL)
 
-        # TODO: validation if 
-        
+        mAP = eval('weights/ssd{}_VOC_'.format(args.input) + repr(iteration) + '.pth', args.dataset_root, args.input, 'eval/', 200, args.cuda, 'val')
+        print(f"Validation mAP: {mAP}")
+        if mAP > bestmAP:
+            bestmAP = mAP
+            print(f"New best mAP: {bestmAP}, saving model...")
+            torch.save(ssd_net.state_dict(), 'weights/best.pth')
+
+
     torch.save(ssd_net.state_dict(),
-               args.save_folder + '' + args.dataset + '.pth')
+               'weights/final.pth'.format(args.input))
 
 
 def adjust_learning_rate(optimizer, gamma, step):
