@@ -33,7 +33,7 @@ class SSD(nn.Module):
         self.cfg = voc['SSD{}'.format(size)]
         self.priorbox = PriorBox(self.cfg)
         with torch.no_grad():
-            self.priors = Variable(self.priorbox.forward())
+            self.priors = Variable(self.priorbox.forward().cuda())
         self.size = size
 
         # SSD network
