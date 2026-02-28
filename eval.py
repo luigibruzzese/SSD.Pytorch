@@ -326,7 +326,7 @@ cachedir: Directory for caching the annotations
 
 
 def test_net(save_folder, net, cuda, dataset, transform, top_k,
-             im_size=300, thresh=0.05):
+             im_size=300, thresh=0.05, batch_size=64):
     num_images = len(dataset)
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(len(labelmap)+1)]
@@ -337,7 +337,7 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
 
     # Usa DataLoader con batch size > 1
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=64, num_workers=4,
+        dataset, batch_size=batch_size, num_workers=4,
         shuffle=False, collate_fn=detection_collate,
         pin_memory=True, generator=torch.Generator(device='cpu')
     )
@@ -385,7 +385,7 @@ def evaluate_detections(box_list, output_dir, dataset):
     write_voc_results_file(box_list, dataset)
     return do_python_eval(output_dir)
 
-def eval(model_path, voc_root, input_size, save_folder, top_k, cuda, s_type, confidence_threshold):
+def eval(model_path, voc_root, input_size, save_folder, top_k, cuda, s_type, confidence_threshold, batch_size):
     global annopath, imgpath, imgsetpath, devkit_path, set_type
 
     annopath = os.path.join(voc_root, 'VOC2007', 'Annotations', '%s.xml')
@@ -412,7 +412,7 @@ def eval(model_path, voc_root, input_size, save_folder, top_k, cuda, s_type, con
     # evaluation
     return test_net(save_folder, net, cuda, dataset,
              BaseTransform(net.size, dataset_mean), top_k, input_size,
-             thresh=confidence_threshold)
+             thresh=confidence_threshold, batch_size=batch_size)
 
 
 if __name__ == '__main__':
