@@ -147,7 +147,7 @@ def vgg(cfg, i = 3, batch_norm=False):
     conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
     layers += [pool5, conv6,
                nn.ReLU(inplace=True), conv7, nn.ReLU(inplace=True)]
-    print('VGG base:',layers)
+    # print('VGG base:',layers)
     return layers
 
 def efficientnet_base(batch_norm=False):
@@ -178,7 +178,7 @@ def add_extras(cfg, i, batch_norm=False):
     if len(cfg) == 13:
         print('input channels:',in_channels)
         layers += [nn.Conv2d(in_channels, 256, kernel_size=4,padding=1)]      # Fix padding to match Caffe version (pad=1).
-    print('extras layers:',layers)
+    # print('extras layers:',layers)
     return layers
 
 def add_efficientnet_extras(cfg, i = 272, batch_norm=False):
@@ -202,10 +202,10 @@ def multibox(vgg, extra_layers, cfg, num_classes):
     loc_layers = []
     conf_layers = []
     vgg_source = [21, -2]   #Conv4_3  Conv7
-    print('VGG16 output size:',len(vgg))
-    print('extra layer size:', len(extra_layers))
-    for i, layer in enumerate(extra_layers):
-        print('extra layer {} : {}'.format(i, layer))
+    # print('VGG16 output size:',len(vgg))
+    # print('extra layer size:', len(extra_layers))
+    # for i, layer in enumerate(extra_layers):
+        # print('extra layer {} : {}'.format(i, layer))
     for k, v in enumerate(vgg_source):
         loc_layers += [nn.Conv2d(vgg[v].out_channels,
                                  cfg[k] * 4, kernel_size=3, padding=1)]
@@ -268,7 +268,7 @@ def build_ssd(phase, size=300, num_classes=21):
     base_, extras_, head_ = multibox(vgg(base[str(size)], 3),
                                      add_extras(extras[str(size)], 1024),
                                      mbox[str(size)], num_classes)
-    print('Begin to build SSD-VGG...\n')
+    # print('Begin to build SSD-VGG...\n')
     return SSD(phase, size, base_, extras_, head_, num_classes)
 
 def build_ssd_efficientnet(phase, size=300, num_classes=21):

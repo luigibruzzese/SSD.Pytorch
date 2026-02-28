@@ -178,39 +178,38 @@ def train():
         if epoch <= 5:
             warmup_learning_rate(optimizer,epoch)
 
-        if iteration > 1:
-            for images, targets in tqdm(train_data_loader, desc=f"Training epoch {epoch}"): # load train data
-                # if iteration % 100 == 0:
-                for param in optimizer.param_groups:
-                    if 'lr' in param.keys():
-                        cur_lr = param['lr']
-                if args.cuda:
-                    images = Variable(images.cuda())
-                    targets = [Variable(ann.cuda()) for ann in targets]
-                else:
-                    images = Variable(images)
-                    targets = [Variable(ann) for ann in targets]
-                # forward
-                t0 = time.time()
-                out = net(images)
-                # backprop
-                optimizer.zero_grad()
-                loss_l, loss_c = criterion(out, targets)
-                loss = loss_l + loss_c
-                loss.backward()
-                optimizer.step()
-                t1 = time.time()
-                loc_loss += loss_l.item()
-                conf_loss += loss_c.item()
+        for images, targets in tqdm(train_data_loader, desc=f"Training epoch {epoch}"): # load train data
+            # if iteration % 100 == 0:
+            for param in optimizer.param_groups:
+                if 'lr' in param.keys():
+                    cur_lr = param['lr']
+            if args.cuda:
+                images = Variable(images.cuda())
+                targets = [Variable(ann.cuda()) for ann in targets]
+            else:
+                images = Variable(images)
+                targets = [Variable(ann) for ann in targets]
+            # forward
+            t0 = time.time()
+            out = net(images)
+            # backprop
+            optimizer.zero_grad()
+            loss_l, loss_c = criterion(out, targets)
+            loss = loss_l + loss_c
+            loss.backward()
+            optimizer.step()
+            t1 = time.time()
+            loc_loss += loss_l.item()
+            conf_loss += loss_c.item()
 
-                # if iteration % 200 == 0:
-                    
-
-                if args.visdom:
-                    update_vis_plot(iteration, loss_l.item(), loss_c.item(),
-                                    iter_plot, epoch_plot, 'append')
+            # if iteration % 200 == 0:
                 
-                iteration += 1
+
+            if args.visdom:
+                update_vis_plot(iteration, loss_l.item(), loss_c.item(),
+                                iter_plot, epoch_plot, 'append')
+            
+            iteration += 1
             print('Epoch '+repr(epoch)+'|| Total iter '+repr(iteration)+ ' || Total Loss: %.4f || Loc Loss: %.4f || Cls Loss: %.4f || LR: %f || timer: %.4f sec.\n' % (loss.item(),loss_l.item(),loss_c.item(),cur_lr,(t1 - t0)), end=' ')
             loss_cls.append(loss_c.item())
             loss_loc.append(loss_l.item())

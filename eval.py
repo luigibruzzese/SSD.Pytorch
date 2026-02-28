@@ -108,7 +108,7 @@ def get_voc_results_file_template(image_set, cls):
 
 def write_voc_results_file(all_boxes, dataset):
     for cls_ind, cls in enumerate(labelmap):
-        print('Writing {:s} VOC results file'.format(cls))
+        # print('Writing {:s} VOC results file'.format(cls))
         filename = get_voc_results_file_template(set_type, cls)
         with open(filename, 'wt') as f:
             for im_ind, index in enumerate(dataset.ids):
@@ -129,7 +129,7 @@ def do_python_eval(output_dir='output', use_07=True):
     aps = []
     # The PASCAL VOC metric changed in 2010
     use_07_metric = use_07
-    print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
+    # print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     for i, cls in enumerate(labelmap):
@@ -138,7 +138,7 @@ def do_python_eval(output_dir='output', use_07=True):
            filename, annopath, imgsetpath.format(set_type), cls, cachedir,
            ovthresh=0.5, use_07_metric=use_07_metric)
         aps += [ap]
-        print('AP for {} = {:.4f}'.format(cls, ap))
+        # print('AP for {} = {:.4f}'.format(cls, ap))
         with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
             pickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
     # print('Mean AP = {:.4f}'.format(np.mean(aps)))
