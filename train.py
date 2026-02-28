@@ -145,14 +145,14 @@ def train():
 
     bestmAP = 0
 
-    epoch_size = math.ceil(len(dataset) / args.batch_size)
+    epoch_size = math.ceil(len(train_dataset) / args.batch_size)
     print('iteration per epoch:',epoch_size)
-    print('Training SSD on:', dataset.name)
+    print('Training SSD on:', train_dataset.name)
     print('Using the specified args:')
     print(args)
     step_index = 0
     if args.visdom:
-        vis_title = 'SSD.PyTorch on ' + dataset.name
+        vis_title = 'SSD.PyTorch on ' + train_dataset.name
         vis_legend = ['Loc Loss', 'Conf Loss', 'Total Loss']
         iter_plot = create_vis_plot('Iteration', 'Loss', vis_title, vis_legend)
         epoch_plot = create_vis_plot('Epoch', 'Loss', vis_title, vis_legend)
