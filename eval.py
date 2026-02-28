@@ -146,14 +146,14 @@ def do_python_eval(output_dir='output', use_07=True):
     print('Results:')
     for ap in aps:
         print('{:.3f}'.format(ap))
-    print('{:.3f}'.format(np.mean(aps)))
+    # print('{:.3f}'.format(np.mean(aps)))
     print('~~~~~~~~')
     print('')
     print('--------------------------------------------------------------')
     print('Results computed with the **unofficial** Python eval code.')
     print('Results should be very close to the official MATLAB eval code.')
     print('--------------------------------------------------------------')
-
+    return np.mean(aps)
 
 def voc_ap(rec, prec, use_07_metric=True):
     """ ap = voc_ap(rec, prec, [use_07_metric])
@@ -378,12 +378,12 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
         pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
     print('Evaluating detections')
-    evaluate_detections(all_boxes, output_dir, dataset)
+    return evaluate_detections(all_boxes, output_dir, dataset)
 
 
 def evaluate_detections(box_list, output_dir, dataset):
     write_voc_results_file(box_list, dataset)
-    do_python_eval(output_dir)
+    return do_python_eval(output_dir)
 
 def eval(model_path, voc_root, input_size, save_folder, top_k, cuda, s_type, confidence_threshold):
     global annopath, imgpath, imgsetpath, devkit_path, set_type
@@ -410,7 +410,7 @@ def eval(model_path, voc_root, input_size, save_folder, top_k, cuda, s_type, con
         net = net.cuda()
         cudnn.benchmark = True
     # evaluation
-    test_net(save_folder, net, cuda, dataset,
+    return test_net(save_folder, net, cuda, dataset,
              BaseTransform(net.size, dataset_mean), top_k, input_size,
              thresh=confidence_threshold)
 
