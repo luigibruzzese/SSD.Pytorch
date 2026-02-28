@@ -143,7 +143,7 @@ def train():
     loss_cls = []
     print('Loading the dataset...')
 
-    bestmAP = 0
+    bestmAP = 0.0
 
     epoch_size = math.ceil(len(train_dataset) / args.batch_size)
     print('iteration per epoch:',epoch_size)
