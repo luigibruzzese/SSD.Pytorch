@@ -118,9 +118,8 @@ def write_voc_results_file(all_boxes, dataset):
                     continue
                 # the VOCdevkit expects 1-based indices
                 for k in range(dets.shape[0]):
-                    name = index[1].replace(' ', '_')
-                    f.write('{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.
-                            format(name, dets[k, -1],
+                    f.write('{:s};{:.3f};{:.1f};{:.1f};{:.1f};{:.1f}\n'.
+                            format(index[1], dets[k, -1],
                                    dets[k, 0] + 1, dets[k, 1] + 1,
                                    dets[k, 2] + 1, dets[k, 3] + 1))
 
@@ -263,7 +262,7 @@ cachedir: Directory for caching the annotations
         lines = f.readlines()
     if any(lines) == 1:
 
-        splitlines = [x.strip().split(' ') for x in lines]
+        splitlines = [x.strip().split(';') for x in lines]
         image_ids = [x[0] for x in splitlines]
         confidence = np.array([float(x[1]) for x in splitlines])
         BB = np.array([[float(z) for z in x[2:]] for x in splitlines])
