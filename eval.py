@@ -381,7 +381,7 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
 
 
 def evaluate_detections(box_list, output_dir, dataset):
-    # write_voc_results_file(box_list, dataset)
+    write_voc_results_file(box_list, dataset)
     do_python_eval(output_dir)
 
 def eval(model_path, voc_root, input_size, save_folder, top_k, cuda, s_type, confidence_threshold):
