@@ -111,10 +111,6 @@ def train():
         # ssd_net.load_weights(args.resume)
         checkpoint = torch.load("weights/checkpoint.pth", map_location=torch.device('cuda') if args.cuda else torch.device('cpu'))
         ssd_net.load_state_dict(checkpoint["model_state"])
-        for state in optimizer.state.values():
-            for k, v in state.items():
-                if torch.is_tensor(v):
-                    state[k] = v.to(torch.device('cuda') if args.cuda else torch.device('cpu'))
     else:
         if args.basenet == 'vgg16_reducedfc.pth':
             vgg_weights = torch.load(args.save_folder + args.basenet)
@@ -140,6 +136,11 @@ def train():
     optimizer = optim.AdamW(net.parameters(), lr=args.lr)
     if args.resume:
         optimizer.load_state_dict(checkpoint["optimizer_state"])
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if torch.is_tensor(v):
+                    state[k] = v.to(torch.device('cuda') if args.cuda else torch.device('cpu'))
+
     criterion = MultiBoxLoss(args.num_class, 0.5, True, 0, True, 3, 0.5,
                              False, args.cuda)
 
