@@ -40,6 +40,8 @@ parser.add_argument('--basenet', default='vgg16_reducedfc.pth', type=str, choice
 parser.add_argument('--num_epoch', default=300, type=int, help='number of epochs to train')
 parser.add_argument('--batch_size', default=16, type=int,
                     help='Batch size for training')
+parser.add_argument('--val_batch_size', default=16, type=int,
+                    help='Batch size for validation')
 parser.add_argument('--resume', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
 parser.add_argument('--start_epoch', default=0, type=int,
@@ -106,7 +108,14 @@ def train():
 
     if args.resume:
         print('Resuming training, loading {}...'.format(args.resume))
-        ssd_net.load_weights(args.resume)
+        # ssd_net.load_weights(args.resume)
+        checkpoint = torch.load("weights/checkpoint.pth", map_location=torch.device('cuda') if args.cuda else torch.device('cpu'))
+        ssd_net.load_state_dict(checkpoint["model_state"])
+        optimizer.load_state_dict(checkpoint["optimizer_state"])
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if torch.is_tensor(v):
+                    state[k] = v.to(torch.device('cuda') if args.cuda else torch.device('cpu'))
     else:
         if args.basenet == 'vgg16_reducedfc.pth':
             vgg_weights = torch.load(args.save_folder + args.basenet)
@@ -216,11 +225,18 @@ def train():
         loss_total.append(loss.item())
         loss_dic = {'loss':loss_total, 'loss_cls':loss_cls, 'loss_loc':loss_loc}
         print('Saving state, iter:', iteration)
-        torch.save(ssd_net.state_dict(), 'weights/last.pth')
+        checkpoint = {
+            "epoch": epoch,
+            "model_state": ssd_net.state_dict(),
+            "optimizer_state": optimizer.state_dict(),
+            # "scheduler_state": scheduler.state_dict(),
+        }
+        torch.save(checkpoint, "weights/checkpoint.pth")
+        # torch.save(ssd_net.state_dict(), 'weights/last.pth')
         with open('loss.pkl', 'wb') as f:
             pickle.dump(loss_dic, f, pickle.HIGHEST_PROTOCOL)
 
-        mAP = eval('weights/last.pth', args.dataset_root, args.input, 'eval/', 200, args.cuda, 'val', 0.01, args.batch_size)
+        mAP = eval('weights/last.pth', args.dataset_root, args.input, 'eval/', 200, args.cuda, 'val', 0.01, args.val_batch_size)
         print(f"Validation mAP: {mAP}")
         if mAP > bestmAP:
             bestmAP = mAP
