@@ -232,7 +232,7 @@ def train():
             # "scheduler_state": scheduler.state_dict(),
         }
         torch.save(checkpoint, "weights/checkpoint.pth")
-        # torch.save(ssd_net.state_dict(), 'weights/last.pth')
+        torch.save(ssd_net.state_dict(), 'weights/last.pth')
         with open('loss.pkl', 'wb') as f:
             pickle.dump(loss_dic, f, pickle.HIGHEST_PROTOCOL)
 
